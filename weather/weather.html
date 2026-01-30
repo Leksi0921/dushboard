@@ -542,7 +542,7 @@ fetch(`https://api.openweathermap.org/data/2.5/weather?q=${CITY}&appid=${API_KEY
     const hours=date.getHours().toString().padStart(2,'0')+":00";
     let icon="☁️";
     const w=h.weather[0].main.toLowerCase();
-    if(w.includes("cloud")) icon="⛅";
+    if(w.includes("cloud")) icon="☁";
     else if(w.includes("rain")) icon="🌧️";
     else if(w.includes("snow")) icon="❄️";
     else if(w.includes("clear")) icon="☀️";
@@ -558,7 +558,7 @@ fetch(`https://api.openweathermap.org/data/2.5/weather?q=${CITY}&appid=${API_KEY
     const date=new Date(day.dt*1000);
     const dayName=daysOfWeek[date.getDay()];
     const wmain=day.weather[0].main.toLowerCase();
-    let icon=wmain.includes("cloud")?"⛅":wmain.includes("rain")?"🌧️":wmain.includes("snow")?"❄️":wmain.includes("fog")?"🌫️":"☀️";
+    let icon=wmain.includes("cloud")?"☁":wmain.includes("rain")?"🌧️":wmain.includes("snow")?"❄️":wmain.includes("fog")?"🌫️":"☀️";
     weeklyEl.appendChild(createDayElement(
       `${date.getDate()}.${date.getMonth()+1}`,
       dayName,
@@ -628,4 +628,5 @@ slider.addEventListener('touchmove', e => {
 </script>
 </body>
 </html>
+
 
