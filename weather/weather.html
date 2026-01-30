@@ -528,7 +528,7 @@ fetch(`https://api.openweathermap.org/data/2.5/weather?q=${CITY}&appid=${API_KEY
   document.getElementById("temp").textContent=Math.round(cur.temp)+"°";
   document.getElementById("desc").textContent=cur.weather[0].description;
   const wmain=cur.weather[0].main.toLowerCase();
-  document.getElementById("icon").textContent=wmain.includes("cloud")?"⛅":
+  document.getElementById("icon").textContent=wmain.includes("cloud")?"☁":
     wmain.includes("rain")?"🌧️":wmain.includes("snow")?"❄️":wmain.includes("fog")?"🌫️":"☀️";
   document.getElementById("details").innerHTML=`💧 ${cur.humidity}% &nbsp; 🌬 ${cur.wind_speed} м/с &nbsp; 🔽 ${cur.pressure}`;
 
@@ -628,3 +628,4 @@ slider.addEventListener('touchmove', e => {
 </script>
 </body>
 </html>
+
