@@ -1,0 +1,630 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<title>Weather Panel Инфопанель</title>
+<style>
+html, body {
+  margin:0; 
+padding:0; 
+height:100%; 
+overflow:auto;
+font-family:system-ui,Arial;
+  color:#fff; 
+transition: background 1.5s ease; 
+position:relative;
+overflow-x: hidden;
+}
+
+
+/* ===== Фон по времени суток + погоде ===== */
+body.morning.sunny { background: linear-gradient(#FFD97D, #6DB9FF); }
+body.day.sunny     { background: linear-gradient(#6DB9FF, #1F5BD8); }
+body.evening.sunny { background: linear-gradient(#FF8E5A, #2A3B72); }
+body.night.sunny   { background: linear-gradient(#1C1C3C, #0D0D1A); }
+
+body.morning.cloudy { background: linear-gradient(#B0B8C2, #7B8A9A); }
+body.day.cloudy     { background: linear-gradient(#9AA7B1, #4B5C6B); }
+body.evening.cloudy { background: linear-gradient(#7A8490, #2E3A4A); }
+body.night.cloudy   { background: linear-gradient(#2E2F3A, #121426); }
+
+body.rainy { background: linear-gradient(#5F6F82,#1F2F3F); }
+body.snowy { background: linear-gradient(#CFD9DF,#667A8A); }
+body.foggy  { background: linear-gradient(#A0A0A0,#4D4D4D); }
+body.stormy { background: linear-gradient(#3A3A4D,#0D0D1A); }
+
+/* ===== Общие облака ===== */
+.bg-cloud {
+  position:absolute; 
+top:0; 
+background-size:contain; 
+background-repeat:no-repeat;
+  opacity: 0; /* изначально полностью прозрачные */
+  transition: opacity 2s ease-in; /* плавное появление за 2 секунды */
+pointer-events: none;
+animation-name:cloudMove;
+ animation-iteration-count:infinite;
+  animation-timing-function:linear; 
+z-index:0;
+}
+@keyframes cloudMove {
+  from {
+    transform: translateX(-800px);
+  }
+  to {
+    transform: translateX(110vw); /* vw = ширина окна */
+  }
+}
+
+/* ===== Осадки ===== */
+.raindrop, .day-raindrop {
+  position:absolute; 
+width:3px; 
+height:20px;
+background:rgba(200,220,255,.8); 
+animation:rain linear infinite;
+}
+@keyframes rain {from {top:-20px;} to {top:100%;}}
+
+.snowflake, .day-snowflake {
+  position:absolute; font-size:16px; opacity:.8; animation:snow linear infinite;
+}
+@keyframes snow {from {top:-20px;} to {top:100%;}}
+
+/* ===== Молнии ===== */
+.lightning {
+  position:absolute; 
+top:0; 
+left:0; 
+width:100%; 
+height:100%; 
+background: rgba(255,255,255,0.8);
+  opacity:0; 
+pointer-events:none; 
+z-index:5; 
+transition: opacity 0.1s ease;
+}
+
+/* ===== Панель ===== */
+.panel{display:flex;flex-direction:column;align-items:center;width:100%;padding:10px 0;position:relative; z-index:1;}
+
+/* ===== Текущая погода ===== */
+.card {
+  width: 90%;
+  max-width: 700px; /* меньше максимальной ширины */
+  background: rgba(0,0,0,0.25);
+  border-radius: 24px; /* чуть меньше скругление */
+  padding: 5px; /* уменьшили padding */
+  box-shadow: 0 10px 40px rgba(0,0,0,0.5); /* меньше тень */
+  text-align: center;
+  margin-bottom: 0px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  position: relative;
+  z-index: 2;
+}
+
+.city {
+  font-size: 12px; /* уменьшили шрифт */
+  font-weight: 600;
+  margin-bottom: 0px; /* компактнее */
+  text-align: center;
+}
+
+.current-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 0px; /* меньше отступ */
+}
+
+.temp {
+  font-size: 48px; /* меньше цифры */
+  font-weight: 700;
+  margin: 0 15vw 0 0; /* расстояние до иконки уменьшено */
+}
+
+.icon {
+  font-size: 48px; /* чуть меньше иконка */
+  text-align: center;
+  position: relative;
+}
+
+.icon-desc {
+  font-size: 14px; /* меньше подпись */
+  margin-top: 0px;
+  text-align: center;
+}
+
+.details {
+  font-size: 16px; /* меньше шрифт */
+  opacity: 0.8;
+  margin-top: 3px;
+}
+
+
+/* ===== Почасовой ===== */
+.hourly-container{width:90%;
+	max-width:700px;
+	overflow:hidden; 
+	cursor:grab;}
+.hourly{display:flex;
+	padding-bottom:0px;
+	margin-top:15px; 
+	user-select:none;
+		overflow-x: scroll;}
+
+			.hourly::-webkit-scrollbar {
+			  display: none;       /* скрыть скроллбар, если нужно */
+			}
+.hour{flex:0 0 auto;
+	min-width:80px;
+	background:rgba(0,0,0,0.1);
+	border-radius:20px;
+	padding:5px;
+	margin-right:10px;
+	font-size:16px;
+	text-align:center;}
+.hour .t{font-size:20px;
+	font-weight:600}
+
+/* ===== 7 дней ===== */
+.weekly{
+	width:90%;
+	max-width:700px;
+	margin-top:10px;
+	display:flex;
+	flex-direction:column;
+	position:relative;
+	overflow:hidden;}
+.day{
+	display:flex;
+	justify-content:space-between;
+	border-radius:20px;
+	padding:5px;
+	padding-right: 20px; /* добавили отступ справа */
+	margin-bottom:5px;
+	align-items:center;
+	position:relative;
+	overflow:hidden;
+	background:rgba(0,0,0,0.25);
+	color:#fff;}
+.day-content{
+	position:relative;
+	z-index:1;
+	display:flex;
+	justify-content:space-between;
+	width:100%;
+	align-items:center;}
+.col{
+	display:flex;
+	flex-direction:column;
+	align-items:center;
+	justify-content:center;}
+.col-left{
+	text-align:left; 
+	min-width:80px;}
+.col-left span{
+	line-height:1.2;}
+.col-middle{
+	text-align:left; 
+	min-width:140px;}
+.col-middle span{
+	line-height:1.2;
+	font-size:14px;
+	opacity:1;}
+.col-icon{
+	  font-size: 36px;
+  	display: flex;
+ 	justify-content: center;
+ 	 align-items: center;  
+}
+.col-temp{
+	font-size:18px;
+	font-weight:bold;}
+
+
+
+
+.bg-cloud,
+.raindrop,
+.snowflake,
+.day-raindrop,
+.day-snowflake {
+  transform: translateZ(0);
+}
+
+
+
+
+
+</style>
+</head>
+<body>
+
+<div class="panel">
+  <div class="card" id="today-block">
+    <div class="city" id="city">Днепр</div>
+    <div class="current-row">
+      <div class="temp" id="temp">+0°</div>
+      <div class="icon">
+        <div id="icon">☁️</div>
+        <div class="icon-desc" id="desc">Загрузка...</div>
+      </div>
+    </div>
+    <div class="details" id="details">💧 -- &nbsp; 🌬 -- &nbsp; 🔽 --</div>
+  </div>
+
+  <div class="hourly-container">
+    <div class="hourly" id="hourly"></div>
+  </div>
+
+  <div class="weekly" id="weekly"></div>
+</div>
+
+<script>
+const API_KEY="9df548a9a64f2af6003492dd2156684c";
+const CITY="Dnipro";
+
+// ===== Время суток =====
+function getTimeOfDay() {
+  const h = new Date().getHours();
+  if (h >= 5 && h < 10) return "morning";
+  else if (h >= 10 && h < 17) return "day";
+  else if (h >= 17 && h < 20) return "evening";
+  else return "night";
+}
+
+// ===== Облака =====
+let bgClouds = [];
+function createBgClouds(w, cloudiness = 50) {
+  const needed = Math.min(Math.ceil(cloudiness / 2), 10); // максимум 10 облаков
+  // добавляем недостающие
+  while (bgClouds.length < needed) {
+    const c = document.createElement("div");
+    c.className = "bg-cloud bg-cloud-page";
+    c.style.backgroundImage = `url(cloud${(bgClouds.length % 4) + 1}.png)`;
+    c.style.width = 300 + Math.random() * 400 + "px";
+    c.style.height = 150 + Math.random() * 150 + "px";
+    c.style.top = Math.random() * 50 + "%";
+    c.style.left = Math.random() * 100 + "vw";
+    c.style.opacity = 0.3 + Math.random() * 0.5;
+    c.style.animationDuration = 150 + Math.random() * 80 + "s";
+    c.style.animationName = "cloudMove";
+    c.style.animationIterationCount = "infinite";
+    c.style.animationTimingFunction = "linear";
+    document.body.appendChild(c);
+    bgClouds.push(c);
+  }
+  // скрываем лишние
+  bgClouds.forEach((c, i) => {
+    c.style.display = i < needed ? "block" : "none";
+  });
+}
+
+// ===== Осадки =====
+function createPrecipitation(w, pop = 0) {
+  const existing = document.querySelectorAll(".raindrop,.snowflake");
+  existing.forEach(p => p.remove());
+  const count = Math.ceil(pop * 50);
+  if (w.includes("rain")) {
+    for (let i = 0; i < count; i++) {
+      const r = document.createElement("div");
+      r.className = "raindrop";
+      r.style.left = Math.random() * 100 + "%";
+      r.style.top = Math.random() * 30 + "%";
+      r.style.width = 2 + Math.random() * 1 + "px"; // тоньше
+      r.style.height = 12 + Math.random() * 8 + "px"; // длиннее
+      r.style.background = "rgba(200,220,255,0.8)";
+      r.style.animationDuration = 0.6 + Math.random() * 0.8 + "s";
+      r.style.position = "absolute";
+      r.style.pointerEvents = "none";
+      document.body.appendChild(r);
+    }
+  } else if (w.includes("snow")) {
+    for (let i = 0; i < count; i++) {
+      const s = document.createElement("div");
+      s.className = "snowflake";
+      s.textContent = "❄";
+      s.style.left = Math.random() * 100 + "%";
+      s.style.top = Math.random() * 30 + "%";
+      s.style.fontSize = 12 + Math.random() * 10 + "px";
+      s.style.opacity = 0.6 + Math.random() * 0.3;
+      s.style.position = "absolute";
+      s.style.pointerEvents = "none";
+      s.style.animationDuration = 3 + Math.random() * 4 + "s";
+      document.body.appendChild(s);
+    }
+  }
+}
+
+// ===== Молнии =====
+let lightningStarted = false;
+function createLightning() {
+  if (lightningStarted) return;
+  lightningStarted = true;
+  const l = document.createElement("div");
+  l.className = "lightning";
+  document.body.appendChild(l);
+  setInterval(() => {
+    l.style.opacity = 1;
+    setTimeout(() => l.style.opacity = 0, 120);
+  }, 2500 + Math.random() * 3000);
+}
+
+// ===== Обновление облаков под время суток =====
+function updateCloudsForTime() {
+  const time = getTimeOfDay();
+  bgClouds.forEach(c => {
+   let opacity, filter;
+    switch(time) {
+      case "morning": opacity=0.55; filter="brightness(1.1)"; break;
+      case "day":     opacity=0.75; filter="brightness(1)"; break;
+      case "evening": opacity=0.65; filter="brightness(0.8)"; break;
+      case "night":   opacity=0.3; filter="brightness(0.5)"; break;
+    }
+    c.style.transition = "opacity 1.5s ease, filter 1.5s ease";
+    c.style.opacity = opacity;
+    c.style.filter = filter;
+  });
+}
+
+// ===== Обновление осадков под время суток =====
+function updatePrecipitationForTime() {
+  const time = getTimeOfDay();
+  const precip = document.querySelectorAll(".raindrop, .snowflake");
+  precip.forEach(p => {
+    if(p.classList.contains("raindrop")) {
+      let opacity;
+      switch(time){
+       case "morning": opacity=0.7; break;
+       case "day":     opacity=0.8; break;
+       case "evening": opacity=0.6; break;
+       case "night":   opacity=0.4; break;
+      }
+      p.style.transition="opacity 1.5s ease";
+      p.style.opacity = opacity;
+    } else {
+      let opacity;
+      switch(time){
+        case "morning": opacity=0.8; break;
+        case "day":     opacity=0.9; break;
+        case "evening": opacity=0.6; break;
+        case "night":   opacity=0.4; break;
+      }
+      p.style.transition="opacity 1.5s ease";
+      p.style.opacity = opacity;
+    }
+  });
+}
+
+// ===== Установка фона с погодой =====
+function setWeatherBg(weatherMain, cloudiness=50, pop=0) {
+  const w = weatherMain.toLowerCase();
+  const body = document.body;
+  const times = ["morning","day","evening","night"];
+  const weathers = ["sunny","cloudy","rainy","snowy","foggy","stormy"];
+
+  // очистка старых классов
+  body.classList.remove(...times, ...weathers);
+
+  // время суток
+  const time = getTimeOfDay();
+  body.classList.add(time);
+
+  // погода
+  let weatherClass = "sunny";
+  if (w.includes("rain")) weatherClass="rainy";
+  else if (w.includes("snow")) weatherClass="snowy";
+  else if (w.includes("cloud")) weatherClass="cloudy";
+  else if (w.includes("fog")||w.includes("mist")) weatherClass="foggy";
+  else if (w.includes("thunderstorm")||w.includes("гроза")) weatherClass="stormy";
+
+  body.classList.add(weatherClass);
+
+  // эффекты
+  createBgClouds(w, cloudiness);
+  createPrecipitation(w, pop);
+  if(weatherClass === "stormy") createLightning();
+
+  // плавная адаптация
+  updateCloudsForTime();
+  updatePrecipitationForTime();
+}
+
+// ===== Автообновление времени суток каждые 30 секунд =====
+function updateTimeAndEffects(){
+  const previousTime = getTimeOfDay();
+  const body = document.body;
+  updateCloudsForTime();
+  updatePrecipitationForTime();
+}
+setInterval(updateTimeAndEffects, 120000);
+
+
+
+
+
+
+
+
+
+
+
+/* ===== Функции ===== */
+function createHourElement(hour, icon, temp){
+  const d=document.createElement("div");
+  d.className="hour";
+  d.innerHTML=`<div>${hour}</div><div>${icon}</div><div class="t">${temp}°</div>`;
+  return d;
+}
+
+function createDayElement(dateStr, dayName, desc, pop, icon, tempDay, tempNight, weatherMain){
+  const d=document.createElement("div");
+  d.className="day";
+
+  const content=document.createElement("div");
+  content.className="day-content";
+  content.innerHTML=`
+    <div class="col col-left"><span>${dateStr}</span><span>${dayName}</span></div>
+    <div class="col col-middle"><span>${desc}</span><span>${Math.round(pop*100)}% осадков</span></div>
+    <div class="col col-icon">${icon}</div>
+    <div class="col col-temp">${Math.round(tempDay)}° / ${Math.round(tempNight)}°</div>
+  `;
+  d.appendChild(content);
+
+  const w=weatherMain.toLowerCase();
+
+  		
+
+
+
+
+  // ===== Осадки внутри дня =====
+  const countPrecip=Math.ceil(pop * 7);
+  for(let i=0;i<countPrecip;i++){
+    if(w.includes("rain")){
+  const r = document.createElement("div");
+  r.className = "day-raindrop";
+  r.style.left = Math.random()*100 + "%";
+  r.style.top = Math.random()*80 + "%"; // более естественное распределение
+  r.style.width = "1px";   // тоньше
+  r.style.height = "12px"; // короче
+  r.style.background = "rgba(200,220,255," + (0.5 + Math.random()*0.5) + ")"; // случайная прозрачность
+  r.style.animationDuration = 0.5 + Math.random()*0.5 + "s";
+  r.style.animationDelay = Math.random()*1 + "s"; // случайная задержка
+  r.style.position = "absolute";
+  d.appendChild(r);
+    } else if(w.includes("snow")){
+      const s=document.createElement("div");
+      s.className="day-snowflake";
+      s.textContent="❄";
+      s.style.left=Math.random()*100+"%";
+      s.style.top=Math.random()*50+"%";
+      s.style.animationDuration=3+Math.random()*3+"s";
+      d.appendChild(s);
+    }
+  }
+
+  return d;
+}
+
+
+
+
+// ===== Загрузка данных =====
+function updateWeather(){
+fetch(`https://api.openweathermap.org/data/2.5/weather?q=${CITY}&appid=${API_KEY}`)
+.then(res=>res.json())
+.then(cityData=>{
+  const {coord,name}=cityData;
+  document.getElementById("city").textContent=name;
+  return fetch(`https://api.openweathermap.org/data/3.0/onecall?lat=${coord.lat}&lon=${coord.lon}&exclude=minutely,alerts&units=metric&lang=ru&appid=${API_KEY}`);
+})
+.then(res=>res.json())
+.then(data=>{
+  const cur=data.current;
+  document.getElementById("temp").textContent=Math.round(cur.temp)+"°";
+  document.getElementById("desc").textContent=cur.weather[0].description;
+  const wmain=cur.weather[0].main.toLowerCase();
+  document.getElementById("icon").textContent=wmain.includes("cloud")?"⛅":
+    wmain.includes("rain")?"🌧️":wmain.includes("snow")?"❄️":wmain.includes("fog")?"🌫️":"☀️";
+  document.getElementById("details").innerHTML=`💧 ${cur.humidity}% &nbsp; 🌬 ${cur.wind_speed} м/с &nbsp; 🔽 ${cur.pressure}`;
+
+  setWeatherBg(cur.weather[0].main, cur.clouds, data.daily[0].pop);
+
+  // Почасовой прогноз
+  const hourlyEl=document.getElementById("hourly");
+  hourlyEl.innerHTML="";
+  data.hourly.slice(0,24).forEach(h=>{
+    const date=new Date(h.dt*1000);
+    const hours=date.getHours().toString().padStart(2,'0')+":00";
+    let icon="☁️";
+    const w=h.weather[0].main.toLowerCase();
+    if(w.includes("cloud")) icon="⛅";
+    else if(w.includes("rain")) icon="🌧️";
+    else if(w.includes("snow")) icon="❄️";
+    else if(w.includes("clear")) icon="☀️";
+    else if(w.includes("fog") || w.includes("mist")) icon="🌫️";
+    hourlyEl.appendChild(createHourElement(hours,icon,Math.round(h.temp)));
+  });
+
+  // 7-дневный прогноз (со следующего дня)
+  const weeklyEl=document.getElementById("weekly");
+  weeklyEl.innerHTML="";
+  const daysOfWeek=["Вс","Пн","Вт","Ср","Чт","Пт","Сб"];
+  data.daily.slice(1,8).forEach(day=>{
+    const date=new Date(day.dt*1000);
+    const dayName=daysOfWeek[date.getDay()];
+    const wmain=day.weather[0].main.toLowerCase();
+    let icon=wmain.includes("cloud")?"⛅":wmain.includes("rain")?"🌧️":wmain.includes("snow")?"❄️":wmain.includes("fog")?"🌫️":"☀️";
+    weeklyEl.appendChild(createDayElement(
+      `${date.getDate()}.${date.getMonth()+1}`,
+      dayName,
+      day.weather[0].description,
+      day.pop,
+      icon,
+      day.temp.day,
+      day.temp.night,
+      day.weather[0].main.toLowerCase()
+    ));
+  });
+})
+.catch(err=>console.error(err));
+}
+
+// обновление каждые 5 минут
+updateWeather();
+setInterval(updateWeather, 300000);
+
+/* ===== Drag & Swipe для почасового прогноза ===== */
+const slider = document.querySelector('.hourly');
+let isDown = false, startX, scrollLeft;
+
+slider.addEventListener('mousedown', e => {
+  isDown = true;
+  const rect = slider.getBoundingClientRect();
+  startX = e.pageX - rect.left;
+  scrollLeft = slider.scrollLeft;
+  slider.style.cursor = 'grabbing';
+});
+
+slider.addEventListener('mouseleave', () => {
+  isDown = false;
+  slider.style.cursor = 'grab';
+});
+
+slider.addEventListener('mouseup', () => {
+  isDown = false;
+  slider.style.cursor = 'grab';
+});
+
+slider.addEventListener('mousemove', e => {
+  if (!isDown) return;
+  e.preventDefault();
+  const rect = slider.getBoundingClientRect();
+  const x = e.pageX - rect.left;
+  slider.scrollLeft = scrollLeft - (x - startX) * 2;
+});
+
+// Touch events
+slider.addEventListener('touchstart', e => {
+  isDown = true;
+  const rect = slider.getBoundingClientRect();
+  startX = e.touches[0].pageX - rect.left;
+  scrollLeft = slider.scrollLeft;
+});
+
+slider.addEventListener('touchend', () => isDown = false);
+
+slider.addEventListener('touchmove', e => {
+  if (!isDown) return;
+  e.preventDefault();
+  const rect = slider.getBoundingClientRect();
+  const x = e.touches[0].pageX - rect.left;
+  slider.scrollLeft = scrollLeft - (x - startX) * 2;
+}, { passive: false });
+</script>
+</body>
+</html>

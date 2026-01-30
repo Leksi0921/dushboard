@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Info Panel</title>
+
+<!-- Skycons -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/skycons/1396634940/skycons.js"></script>
+
+<style>
+:root{
+  --bg:#1e1e2f;
+  --panel:#2c2c3c;
+  --text:#ffffff;
+  --muted:#8b949e;
+  --accent:#708090;
+}
+
+body{
+  margin:0;
+  background:var(--bg);
+  color:var(--text);
+  
+}
+
+#container{
+  display:flex;
+  height:100vh;
+	width:100vw;
+gap 5 px;
+}
+
+/* ========== WEATHER ========== */
+#weather{
+  flex:1.2;
+  padding:20px;
+  background:linear-gradient(180deg,#1e1e2f,#2c2c3c);
+  box-sizing:border-box;
+}
+
+.weather-current{
+  display:flex;
+  align-items:center;
+  gap:15px;
+}
+
+.weather-current canvas{
+  width:90px;
+  height:90px;
+}
+
+.weather-temp{
+  font-size:34px;
+}
+
+.weather-desc{
+  color:var(--muted);
+}
+
+.weather-cards{
+  display:flex;
+  gap:10px;
+  margin-top:20px;
+  overflow-x:auto;
+}
+
+.weather-card{
+  background:var(--panel);
+  border-radius:12px;
+  padding:10px;
+  min-width:80px;
+  text-align:center;
+}
+
+.weather-card canvas{
+  width:40px;
+  height:40px;
+}
+
+#weatherArea {
+  flex:1; /* если используешь flex */
+  overflow:hidden;
+position: relative;
+}
+
+#weatherFrame {
+position: absolute;
+  top:0;
+  left:0;
+  width:100%;
+  height:100%;
+  border:none;
+  border-radius:12px; /* если нужно скругление */
+  display:block;
+
+}
+
+
+
+/* ========== RIGHT PANEL ========== */
+#rightPanel{
+  flex:1;
+  display:flex;
+  flex-direction:column;
+  padding:10px;
+  box-sizing:border-box;
+}
+
+/* ========== CALENDAR ========== */
+#calendar{
+  height: 40%; /* 65% высоты rightPanel */
+  background:var(--panel)  url('календарь.jpg') no-repeat center center;
+  background-size: cover;  /*изображение покроет весь блок */;
+filter: brightness(0.8); /* 0.7 = 70% яркости */
+  border-radius:12px;
+  padding:0px;
+  margin-bottom:10px;
+font-family:"URW Chancery L", cursive;
+}
+
+#calendar h2{
+  font-size:21px;
+  margin-bottom:0px;
+margin-top:0px;
+  text-align:center;
+		color:#40E0D0;
+}
+
+.calendar-header{
+  display:grid;
+  grid-template-columns:repeat(7,1fr);
+  text-align:center;
+}
+
+.calendar-header div{
+  color:#61ed15;
+  font-size:18px;
+font-weight: 800; /* Жирный текст для текущего дня */
+}
+
+.calendar-body{
+  display:grid;
+  grid-template-columns:repeat(7,1fr);
+  gap:4px;
+  margin-top:3px;
+}
+
+.day{
+  font-size:18px;
+  text-align:center;
+  padding:0px;
+font-weight: 800; /* Жирный текст для текущего дня */
+}
+
+.today{
+  background:var(--accent);
+  color:#000;
+  border-radius:10px;
+  font-weight:700;
+		text-align:center;
+		font-size:18px;
+		padding:0px;
+}
+
+/* ========== TODOIST ========== */
+#todoist{
+  height: 60%;
+  background:var(--panel)  url('обои.jpg') no-repeat center center;
+  background-size: cover;  /*изображение покроет весь блок */;
+filter: brightness(0.8); /* 0.7 = 70% яркости */
+  border-radius:12px;
+  padding:5px;
+  overflow:auto;
+}
+
+#todoist h2{
+  text-align:center;
+  margin:0 0 0px 0;
+  color:#67f55d;
+font-family:"URW Chancery L", cursive;
+font-weight: 800; /* Жирный текст для текущего дня */
+}
+
+.todo-columns{
+  display:flex;
+  gap:0%;    /* расстояние между колонками */
+
+justify-content: flex-start; /* колонки слева */
+  padding-left: 10px;          /* сдвиг всего ряда колонок вправо */
+        font-weight: 500; /* Жирный текст для текущего дня */
+}
+
+.todo-columns h3{
+  text-align:left;
+  margin:0 0 0px 0;
+  font-size:16px;
+  color:#fabd43;
+font-family:"URW Chancery L", cursive;
+}
+
+.todo-item{
+  display:flex;
+  align-items:left;
+  gap:6px;
+  margin-bottom:5px;
+}
+
+
+.text-box 
+{
+  background-color: rgba(0, 0, 0, 0.4); /* полупрозрачный черный фон */
+  padding: 1px 3px; /* отступы вокруг текста */
+  border-radius: 6px; /* скруглённые углы */
+  display: inline-block; /* чтобы фон обрамлял только текст */
+}
+
+
+
+
+</style>
+</head>
+
+<body>
+<div id="container">
+
+<!-- WEATHER -->
+ <div class="weather" id="weatherArea">
+    <iframe 
+    src="weather/weather.html"
+     id="weatherFrame"
+    frameborder="0"
+    allowfullscreen
+  ></iframe>
+  </div>
+
+<!-- RIGHT -->
+<div id="rightPanel">
+
+<!-- CALENDAR -->
+<div id="calendar">
+  <h2 id="monthTitle"></h2>
+  <div class="calendar-header" id="weekdays"></div>
+  <div class="calendar-body" id="calendarDays"></div>
+</div>
+
+<!-- TODOIST -->
+<div id="todoist">
+  <h2>Todoist</h2>
+  <div class="todo-columns">
+   
+
+	<div style="flex:1;">
+ 	<h3 class="text-box">Today</h3>
+	<div id="todoToday"></div>
+	</div>
+
+    <div style="flex:1;">
+      <h3 class="text-box">One-time tasks</h3>
+      <div id="todoInbox"></div>
+    </div>
+
+  </div>
+</div>
+
+</div>
+</div>
+
+<script>
+
+
+
+
+
+/* ===== CALENDAR ===== */
+const monthsRu=["Январь","Февраль","Март","Апрель","Май","Июнь","Июль","Август","Сентябрь","Октябрь","Ноябрь","Декабрь"];
+const monthsEn=["January","February","March","April","May","June","July","August","September","October","November","December"];
+const weekdays=["Пн","Вт","Ср","Чт","Пт","Сб","Вс"];
+
+const monthTitle=document.getElementById("monthTitle");
+const w=document.getElementById("weekdays");
+const cal=document.getElementById("calendarDays");
+
+/* дни недели рисуем один раз */
+w.innerHTML="";
+weekdays.forEach(d=>w.innerHTML+=`<div>${d}</div>`);
+
+function renderCalendar(){
+  const now=new Date();
+
+  monthTitle.textContent =
+    monthsRu[now.getMonth()]+" / "+monthsEn[now.getMonth()];
+
+  cal.innerHTML="";
+
+  const first=new Date(now.getFullYear(),now.getMonth(),1).getDay()||7;
+  const days=new Date(now.getFullYear(),now.getMonth()+1,0).getDate();
+
+  for(let i=1;i<first;i++) cal.innerHTML+="<div></div>";
+
+  for(let d=1;d<=days;d++){
+    cal.innerHTML+=`
+      <div class="${d===now.getDate()?"today":"day"}">${d}</div>
+    `;
+  }
+}
+
+/* запуск сразу */
+renderCalendar();
+
+/* автообновление в 00:00 */
+function scheduleMidnightUpdate(){
+  const now=new Date();
+  const nextMidnight=new Date(
+    now.getFullYear(),
+    now.getMonth(),
+    now.getDate()+1,
+    0,0,0,0
+  );
+
+  const timeout=nextMidnight-now;
+
+  setTimeout(()=>{
+    renderCalendar();
+    setInterval(renderCalendar,86400000); // каждые сутки
+  },timeout);
+}
+
+scheduleMidnightUpdate();
+
+/* ===== WEATHER ===== */
+
+
+/* ===== TODOIST ===== */
+// === Токен и проект ===
+const TODOIST_TOKEN = "b7af2d560f0306a93525f8cdfe7b5b436e18bd1a";
+const INBOX_PROJECT_ID = 2365223363;
+
+// === DOM элементы ===
+const todoToday = document.getElementById("todoToday");
+const todoInbox = document.getElementById("todoInbox");
+
+// === Загрузка задач с фильтром по URL ===
+async function loadTodo(url, el) {
+  try {
+    const r = await fetch(url, { headers: { Authorization: "Bearer " + TODOIST_TOKEN } });
+    const t = await r.json();
+
+    // Оставляем только активные задачи
+    const activeTasks = t.filter(task => !task.is_completed);
+
+    el.innerHTML = "";
+
+    activeTasks.forEach(x => {
+      const taskDiv = document.createElement("div");
+      taskDiv.className = "todo-item";
+      taskDiv.innerHTML = `
+        <input type="checkbox"> ${x.content}
+      `;
+
+      // Клик по чекбоксу → закрываем задачу
+      const checkbox = taskDiv.querySelector("input");
+      checkbox.addEventListener("change", async () => {
+        await completeTask(x.id);
+        taskDiv.remove(); // сразу убираем из списка
+      });
+
+      el.appendChild(taskDiv);
+    });
+  } catch (err) {
+    console.error("Ошибка загрузки Todoist:", err);
+  }
+}
+
+// === Закрытие задачи через API ===
+async function completeTask(id) {
+  try {
+    await fetch(`https://api.todoist.com/rest/v2/tasks/${id}/close`, {
+      method: "POST",
+      headers: { Authorization: "Bearer " + TODOIST_TOKEN }
+    });
+  } catch (err) {
+    console.error("Не удалось отметить задачу выполненной:", err);
+  }
+}
+
+// === Функция автообновления обоих списков ===
+async function updateTodoLists() {
+  await loadTodo("https://api.todoist.com/rest/v2/tasks?filter=today", todoToday);
+  await loadTodo(`https://api.todoist.com/rest/v2/tasks?project_id=${INBOX_PROJECT_ID}`, todoInbox);
+}
+
+// === Первичная загрузка ===
+updateTodoLists();
+
+// === Автообновление каждые 60 секунд ===
+setInterval(updateTodoLists, 60000);
+
+</script>
+</body>
+</html>
